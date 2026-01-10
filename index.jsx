@@ -42,7 +42,8 @@ const NoiseOverlay = () => (
 );
 
 const GrungeButton = ({ children, onClick, className, variant = 'primary', disabled }) => {
-  const baseStyles = "relative font-['Oswald'] uppercase tracking-widest font-bold border-2 border-[#1A1A1A] px-6 py-4 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center";
+  const baseStyles = "relative font-['Oswald'] uppercase tracking-widest font-bold border-2 border-[#1A1A1A] px-6 py-4 transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center touch-manipulation";
+  const pointerHandledRef = useRef(false);
   
   const variants = {
     primary: "bg-[#DC143C] text-white shadow-[4px_4px_0px_0px_#1A1A1A] hover:translate-x-[-1px] hover:translate-y-[-1px] hover:shadow-[6px_6px_0px_0px_#1A1A1A]",
@@ -50,11 +51,26 @@ const GrungeButton = ({ children, onClick, className, variant = 'primary', disab
     black: "bg-[#1A1A1A] text-white shadow-[4px_4px_0px_0px_#888]"
   };
 
+  const handlePointerUp = (event) => {
+    if (disabled) return;
+    pointerHandledRef.current = true;
+    onClick?.(event);
+  };
+
+  const handleClick = (event) => {
+    if (pointerHandledRef.current) {
+      pointerHandledRef.current = false;
+      return;
+    }
+    onClick?.(event);
+  };
+
   return (
     <motion.button
       whileHover={{ scale: 1.02, rotate: Math.random() * 2 - 1 }}
       whileTap={{ scale: 0.95 }}
-      onClick={onClick}
+      onPointerUp={handlePointerUp}
+      onClick={handleClick}
       disabled={disabled}
       className={cn(baseStyles, variants[variant], className)}
     >
