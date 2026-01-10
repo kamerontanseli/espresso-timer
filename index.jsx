@@ -90,12 +90,15 @@ const App = () => {
   const [timerActive, setTimerActive] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
   const timerRef = useRef(null);
+  // Use refs for accurate timing (avoids stale closures)
+  const startTimeRef = useRef(null);
+  const accumulatedTimeRef = useRef(0);
 
   // Results State
   const [actualOutput, setActualOutput] = useState('');
   const [actualTime, setActualTime] = useState(0);
   const [recommendation, setRecommendation] = useState(null);
-  
+
   // History
   const [history, setHistory] = useState([]);
 
@@ -112,28 +115,38 @@ const App = () => {
   // --- Actions ---
   const startTimer = () => {
     setTimerActive(true);
-    const startTime = Date.now() - elapsedTime * 1000;
+    startTimeRef.current = Date.now();
     timerRef.current = setInterval(() => {
-      setElapsedTime((Date.now() - startTime) / 1000);
-    }, 50); 
+      const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
+      setElapsedTime(elapsed);
+    }, 30);
   };
 
   const stopTimer = () => {
+    const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
     setTimerActive(false);
     clearInterval(timerRef.current);
-    setActualTime(elapsedTime);
+    accumulatedTimeRef.current = elapsed;
+    setActualTime(elapsed);
+    setElapsedTime(elapsed);
   };
 
   const resetTimer = () => {
     setTimerActive(false);
     clearInterval(timerRef.current);
+    accumulatedTimeRef.current = 0;
+    startTimeRef.current = null;
     setElapsedTime(0);
   };
 
   const finishPull = () => {
-    stopTimer();
-    setActualTime(elapsedTime);
-    setActualOutput(targetOutput.toString()); 
+    const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
+    setTimerActive(false);
+    clearInterval(timerRef.current);
+    accumulatedTimeRef.current = elapsed;
+    setActualTime(elapsed);
+    setElapsedTime(elapsed);
+    setActualOutput(targetOutput.toString());
     setStep('analyze');
   };
 
@@ -182,6 +195,8 @@ const App = () => {
     setElapsedTime(0);
     setActualOutput('');
     setRecommendation(null);
+    accumulatedTimeRef.current = 0;
+    startTimeRef.current = null;
   };
 
   // --- UI Components ---
