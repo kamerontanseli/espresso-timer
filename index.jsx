@@ -31,6 +31,7 @@ function cn(...inputs) {
 const TARGET_RATIO = 2;
 const MIN_GOOD_TIME = 25;
 const MAX_GOOD_TIME = 30;
+const DEFAULT_PRE_INFUSION_SECONDS = 10;
 
 // --- Grunge Components ---
 
@@ -89,7 +90,11 @@ const App = () => {
   // Timer State
   const [timerActive, setTimerActive] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
+  const [phase, setPhase] = useState('idle');
+  const [preInfusionSeconds, setPreInfusionSeconds] = useState(DEFAULT_PRE_INFUSION_SECONDS);
+  const [preInfusionRemaining, setPreInfusionRemaining] = useState(DEFAULT_PRE_INFUSION_SECONDS);
   const timerRef = useRef(null);
+  const phaseRef = useRef('idle');
   // Use refs for accurate timing (avoids stale closures)
   const startTimeRef = useRef(null);
   const accumulatedTimeRef = useRef(0);
@@ -113,20 +118,47 @@ const App = () => {
   }, [grindYield, grindTime, inputWeightTarget]);
 
   // --- Actions ---
+  const updatePhase = (nextPhase) => {
+    phaseRef.current = nextPhase;
+    setPhase(nextPhase);
+  };
+
   const startTimer = () => {
     setTimerActive(true);
+    setElapsedTime(0);
+    setPreInfusionRemaining(preInfusionSeconds);
+    accumulatedTimeRef.current = 0;
     startTimeRef.current = Date.now();
+    updatePhase('preinfusion');
     timerRef.current = setInterval(() => {
+      if (phaseRef.current === 'preinfusion') {
+        const elapsedPreInfusion = (Date.now() - startTimeRef.current) / 1000;
+        const remaining = Math.max(0, preInfusionSeconds - elapsedPreInfusion);
+        if (remaining > 0) {
+          setPreInfusionRemaining(remaining);
+          return;
+        }
+        setPreInfusionRemaining(0);
+        updatePhase('brew');
+        startTimeRef.current = Date.now();
+        accumulatedTimeRef.current = 0;
+        setElapsedTime(0);
+        return;
+      }
       const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
       setElapsedTime(elapsed);
     }, 30);
   };
 
   const stopTimer = () => {
-    const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
+    const elapsed = phaseRef.current === 'brew'
+      ? (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current
+      : 0;
     setTimerActive(false);
     clearInterval(timerRef.current);
     accumulatedTimeRef.current = elapsed;
+    updatePhase('idle');
+    setPreInfusionRemaining(preInfusionSeconds);
     setActualTime(elapsed);
     setElapsedTime(elapsed);
   };
@@ -136,14 +168,20 @@ const App = () => {
     clearInterval(timerRef.current);
     accumulatedTimeRef.current = 0;
     startTimeRef.current = null;
+    updatePhase('idle');
+    setPreInfusionRemaining(preInfusionSeconds);
     setElapsedTime(0);
   };
 
   const finishPull = () => {
-    const elapsed = (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current;
+    const elapsed = phaseRef.current === 'brew'
+      ? (Date.now() - startTimeRef.current) / 1000 + accumulatedTimeRef.current
+      : 0;
     setTimerActive(false);
     clearInterval(timerRef.current);
     accumulatedTimeRef.current = elapsed;
+    updatePhase('idle');
+    setPreInfusionRemaining(preInfusionSeconds);
     setActualTime(elapsed);
     setElapsedTime(elapsed);
     setActualOutput(targetOutput.toString());
@@ -197,6 +235,8 @@ const App = () => {
     setRecommendation(null);
     accumulatedTimeRef.current = 0;
     startTimeRef.current = null;
+    updatePhase('idle');
+    setPreInfusionRemaining(preInfusionSeconds);
   };
 
   // --- UI Components ---
@@ -252,6 +292,12 @@ const App = () => {
     animate: { opacity: 1, scale: 1, rotate: 0 },
     exit: { opacity: 0, scale: 1.1, rotate: 2 }
   };
+
+  const timerDisplayTime = phase === 'preinfusion' ? preInfusionRemaining : elapsedTime;
+  const timerLabel = phase === 'preinfusion' ? 'PRE-INFUSION' : 'SECONDS';
+  const timerProgress = phase === 'preinfusion'
+    ? (preInfusionSeconds === 0 ? 1 : (preInfusionSeconds - preInfusionRemaining) / preInfusionSeconds)
+    : Math.min(elapsedTime, 30) / 30;
 
   return (
     <div className="min-h-dvh bg-[#F0EAD6] text-[#1A1A1A] font-sans pb-[safe-area-inset-bottom] overflow-x-hidden relative">
@@ -347,6 +393,33 @@ const App = () => {
                         </div>
                      </div>
 
+                     <div>
+                       <label className="font-['Courier_New'] font-bold text-xs block mb-1">PRE-INFUSION (S)</label>
+                       <input
+                         type="text"
+                         inputMode="decimal"
+                         value={preInfusionSeconds}
+                         onChange={(e) => {
+                           const next = parseFloat(e.target.value);
+                           const value = Number.isFinite(next) ? next : 0;
+                           setPreInfusionSeconds(value);
+                           if (!timerActive) {
+                             setPreInfusionRemaining(value);
+                           }
+                         }}
+                         onBlur={(e) => {
+                           const next = parseFloat(e.target.value);
+                           const value = Number.isFinite(next) ? next : 0;
+                           setPreInfusionSeconds(value);
+                           if (!timerActive) {
+                             setPreInfusionRemaining(value);
+                           }
+                         }}
+                         style={{ fontSize: '16px' }}
+                         className="w-full bg-[#F0EAD6] border-2 border-[#1A1A1A] p-2 font-['Courier_New'] font-bold focus:outline-none focus:ring-2 focus:ring-[#DC143C] tabular-nums"
+                       />
+                     </div>
+
                      {recGrindTime && (
                        <motion.div 
                         initial={{ opacity: 0, x: -10 }}
@@ -417,7 +490,7 @@ const App = () => {
                 <div className="flex-grow border-4 border-[#1A1A1A] bg-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#DC143C] flex flex-col items-center justify-center relative overflow-hidden">
                   <div className="absolute inset-0 flex items-center justify-center opacity-5 pointer-events-none">
                      <span className="text-[200px] font-['Oswald'] font-black text-white animate-pulse">
-                       {Math.floor(elapsedTime)}
+                       {Math.floor(timerDisplayTime)}
                      </span>
                   </div>
 
@@ -433,16 +506,21 @@ const App = () => {
                           fill="none"
                           strokeDasharray={690}
                           initial={{ strokeDashoffset: 690 }}
-                          animate={{ strokeDashoffset: 690 - (Math.min(elapsedTime, 30) / 30) * 690 }}
+                          animate={{ strokeDashoffset: 690 - timerProgress * 690 }}
                           transition={{ duration: 0.1 }}
                           strokeLinecap="butt"
                         />
                       </svg>
                       <div className="absolute inset-0 flex flex-col items-center justify-center text-white">
                          <span className="font-['Oswald'] text-7xl font-black tracking-tighter tabular-nums">
-                            {elapsedTime.toFixed(1)}
+                            {timerDisplayTime.toFixed(1)}
                          </span>
-                         <span className="font-['Courier_New'] text-sm bg-[#DC143C] text-white px-2 font-bold mt-2">SECONDS</span>
+                         <span className="font-['Courier_New'] text-sm bg-[#DC143C] text-white px-2 font-bold mt-2">{timerLabel}</span>
+                         {!timerActive && phase === 'idle' && (
+                           <span className="mt-3 font-['Courier_New'] text-xs uppercase tracking-widest text-white/70">
+                             PRE-INFUSION: {preInfusionSeconds.toFixed(1)}s
+                           </span>
+                         )}
                       </div>
                     </div>
                   </div>
