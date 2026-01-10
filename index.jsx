@@ -307,18 +307,24 @@ const App = () => {
                      <div className="grid grid-cols-2 gap-4">
                         <div>
                           <label className="font-['Courier_New'] font-bold text-xs block mb-1">TEST_TIME (S)</label>
-                          <input 
-                            type="number" step="0.1" value={grindTime}
-                            onChange={(e) => setGrindTime(parseFloat(e.target.value) || 0)}
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={grindTime}
+                            onChange={(e) => setGrindTime(e.target.value)}
+                            onBlur={(e) => setGrindTime(parseFloat(e.target.value) || 0)}
                             style={{ fontSize: '16px' }}
                             className="w-full bg-[#F0EAD6] border-2 border-[#1A1A1A] p-2 font-['Courier_New'] font-bold focus:outline-none focus:ring-2 focus:ring-[#DC143C] tabular-nums"
                           />
                         </div>
                         <div>
                           <label className="font-['Courier_New'] font-bold text-xs block mb-1">TEST_YIELD (G)</label>
-                          <input 
-                            type="number" step="0.1" value={grindYield}
+                          <input
+                            type="text"
+                            inputMode="decimal"
+                            value={grindYield}
                             onChange={(e) => setGrindYield(e.target.value)}
+                            onBlur={(e) => setGrindYield(parseFloat(e.target.value) || 0)}
                             placeholder="0.0"
                             style={{ fontSize: '16px' }}
                             className="w-full bg-[#F0EAD6] border-2 border-[#1A1A1A] p-2 font-['Courier_New'] font-bold focus:outline-none focus:ring-2 focus:ring-[#DC143C] tabular-nums"
@@ -482,10 +488,12 @@ const App = () => {
                      <div className="mb-8">
                         <label className="font-['Courier_New'] font-bold text-sm block mb-2 uppercase">Recorded Output (Grams)</label>
                         <div className="relative">
-                          <input 
-                            type="number" 
+                          <input
+                            type="text"
+                            inputMode="decimal"
                             value={actualOutput}
                             onChange={(e) => setActualOutput(e.target.value)}
+                            onBlur={(e) => setActualOutput(parseFloat(e.target.value) || '')}
                             placeholder={targetOutput.toString()}
                             style={{ fontSize: '16px' }}
                             className="w-full bg-[#F0EAD6] border-b-4 border-[#1A1A1A] py-4 pl-4 pr-16 font-['Oswald'] font-bold focus:outline-none focus:bg-[#DC143C] focus:text-white transition-colors tabular-nums placeholder:text-[#1A1A1A]/20"
