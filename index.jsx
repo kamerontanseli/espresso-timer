@@ -1,22 +1,26 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import { 
-  Coffee, 
-  Timer, 
-  Settings2, 
-  History, 
-  Play, 
-  Square, 
-  RotateCcw, 
-  CheckCircle2, 
-  AlertCircle, 
+import {
+  Coffee,
+  Timer,
+  Settings2,
+  History,
+  Play,
+  Square,
+  RotateCcw,
+  CheckCircle2,
+  AlertCircle,
   ChevronRight,
   TrendingUp,
   Scale,
   Calculator,
   ArrowLeft,
-  X
+  X,
+  HelpCircle,
+  Droplets,
+  ScaleIcon,
+  Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -329,13 +333,22 @@ const App = () => {
             <span className="font-['Courier_New'] text-xs text-[#1A1A1A] bg-[#F0EAD6] px-1 font-bold uppercase">VER. 2.0 // RAW</span>
           </div>
         </div>
-        <button 
-          onClick={() => setStep('history')}
-          className="bg-[#1A1A1A] p-3 border-2 border-white text-white hover:bg-[#F0EAD6] hover:text-[#1A1A1A] hover:border-[#1A1A1A] transition-colors"
-          aria-label="View shot history"
-        >
-          <History size={20} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setStep('help')}
+            className="bg-[#1A1A1A] p-3 border-2 border-white text-white hover:bg-[#F0EAD6] hover:text-[#1A1A1A] hover:border-[#1A1A1A] transition-colors"
+            aria-label="View help"
+          >
+            <HelpCircle size={20} />
+          </button>
+          <button
+            onClick={() => setStep('history')}
+            className="bg-[#1A1A1A] p-3 border-2 border-white text-white hover:bg-[#F0EAD6] hover:text-[#1A1A1A] hover:border-[#1A1A1A] transition-colors"
+            aria-label="View shot history"
+          >
+            <History size={20} />
+          </button>
+        </div>
       </div>
     </header>
   );
@@ -348,8 +361,8 @@ const App = () => {
     return (
       <div className="flex justify-center gap-1 mb-8 px-6">
         {steps.map((s, idx) => (
-          <div 
-            key={s} 
+          <div
+            key={s}
             className={cn(
               "h-2 flex-1 border border-[#1A1A1A] transition-all duration-300 transform skew-x-12",
               idx <= currentIndex ? "bg-[#1A1A1A]" : "bg-transparent opacity-30"
@@ -781,7 +794,7 @@ const App = () => {
                       </motion.div>
                     ))}
                     
-                    <button 
+                    <button
                       onClick={() => setHistory([])}
                       className="w-full py-4 font-['Courier_New'] font-bold text-xs uppercase hover:underline decoration-2 underline-offset-4 decoration-[#DC143C]"
                     >
@@ -789,6 +802,168 @@ const App = () => {
                     </button>
                   </div>
                 )}
+              </motion.div>
+            )}
+
+            {step === 'help' && (
+              <motion.div
+                key="help"
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                className="flex-grow"
+              >
+                <div className="flex items-center justify-between mb-6">
+                   <SectionHeading>
+                      <HelpCircle className="text-[#DC143C]" size={32} strokeWidth={2.5} />
+                      GUIDE
+                   </SectionHeading>
+                   <button onClick={() => setStep('setup')} className="border-2 border-[#1A1A1A] p-2 hover:bg-[#1A1A1A] hover:text-white transition-colors">
+                      <X size={24} />
+                   </button>
+                </div>
+
+                <div className="space-y-6">
+                  {/* What is Espresso */}
+                  <div className="bg-white border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#1A1A1A]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-[#DC143C] p-2">
+                        <Coffee size={20} className="text-white" />
+                      </div>
+                      <h3 className="font-['Oswald'] font-bold text-xl uppercase">What is Espresso?</h3>
+                    </div>
+                    <p className="font-['Courier_New'] text-sm leading-relaxed">
+                      Espresso is concentrated coffee made by forcing hot water through finely-ground coffee under high pressure (9 bars).
+                      The result is a rich, complex shot with a golden crema on top. A proper shot extracts the optimal balance of flavors,
+                      sugars, and oils from the coffee beans.
+                    </p>
+                  </div>
+
+                  {/* Input Grams */}
+                  <div className="bg-white border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#1A1A1A]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-[#1A1A1A] p-2">
+                        <ScaleIcon size={20} className="text-white" />
+                      </div>
+                      <h3 className="font-['Oswald'] font-bold text-xl uppercase">Input Grams (Dose)</h3>
+                    </div>
+                    <p className="font-['Courier_New'] text-sm leading-relaxed mb-3">
+                      The <strong>input grams</strong> is the amount of ground coffee you put in the portafilter basket.
+                      This is your starting point for calculating extraction.
+                    </p>
+                    <div className="bg-[#F0EAD6] border-2 border-[#1A1A1A] p-3 font-['Courier_New'] text-xs">
+                      <div className="mb-2"><strong>Why it matters:</strong></div>
+                      <ul className="list-disc list-inside space-y-1 opacity-80">
+                        <li>Consistency - same dose = predictable results</li>
+                        <li>Ratio calculation - output ÷ input = extraction ratio</li>
+                        <li>Standard shots: Single = 9g, Double = 18g</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Pre-Infusion */}
+                  <div className="bg-white border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#1A1A1A]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-[#C5A945] p-2">
+                        <Droplets size={20} className="text-[#1A1A1A]" />
+                      </div>
+                      <h3 className="font-['Oswald'] font-bold text-xl uppercase">Pre-Infusion</h3>
+                    </div>
+                    <p className="font-['Courier_New'] text-sm leading-relaxed mb-3">
+                      <strong>Pre-infusion</strong> is the initial low-pressure flow of water that saturates the coffee puck before full pressure.
+                      The water "blooms" the grounds, releasing CO2 and even out extraction.
+                    </p>
+                    <div className="bg-[#F0EAD6] border-2 border-[#1A1A1A] p-3 font-['Courier_New'] text-xs">
+                      <div className="mb-2"><strong>Why it matters:</strong></div>
+                      <ul className="list-disc list-inside space-y-1 opacity-80">
+                        <li>Prevents channeling (uneven extraction)</li>
+                        <li>Typically 5-10 seconds</li>
+                        <li>Improves clarity and sweetness</li>
+                        <li>Too long = sour, watery shot</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Timer */}
+                  <div className="bg-white border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#1A1A1A]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-[#DC143C] p-2">
+                        <Clock size={20} className="text-white" />
+                      </div>
+                      <h3 className="font-['Oswald'] font-bold text-xl uppercase">Pull Time (Timer)</h3>
+                    </div>
+                    <p className="font-['Courier_New'] text-sm leading-relaxed mb-3">
+                      The <strong>timer</strong> tracks how long water flows through the coffee after pre-infusion.
+                      This is your extraction time - the most critical variable for flavor.
+                    </p>
+                    <div className="bg-[#F0EAD6] border-2 border-[#1A1A1A] p-3 font-['Courier_New'] text-xs">
+                      <div className="mb-2"><strong>Target: 25-30 seconds</strong></div>
+                      <ul className="list-disc list-inside space-y-1 opacity-80">
+                        <li>&lt; 25s = Under-extracted (sour, thin)</li>
+                        <li>25-30s = Optimal (sweet, balanced)</li>
+                        <li>&gt; 30s = Over-extracted (bitter, dry)</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Output Grams */}
+                  <div className="bg-white border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#1A1A1A]">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="bg-[#1A1A1A] p-2">
+                        <TrendingUp size={20} className="text-white" />
+                      </div>
+                      <h3 className="font-['Oswald'] font-bold text-xl uppercase">Output Grams (Yield)</h3>
+                    </div>
+                    <p className="font-['Courier_New'] text-sm leading-relaxed mb-3">
+                      The <strong>output grams</strong> is the weight of espresso liquid you collect in your cup.
+                      This determines your extraction ratio.
+                    </p>
+                    <div className="bg-[#F0EAD6] border-2 border-[#1A1A1A] p-3 font-['Courier_New'] text-xs">
+                      <div className="mb-2"><strong>Target Ratio: 1:2 (Dose × 2)</strong></div>
+                      <ul className="list-disc list-inside space-y-1 opacity-80">
+                        <li>Double shot: 18g in → 36g out</li>
+                        <li>Single shot: 9g in → 18g out</li>
+                        <li>Too little = under-extracted</li>
+                        <li>Too much = over-extracted</li>
+                      </ul>
+                    </div>
+                  </div>
+
+                  {/* Golden Rules */}
+                  <div className="bg-[#1A1A1A] border-4 border-[#1A1A1A] p-6 shadow-[8px_8px_0px_0px_#DC143C]">
+                    <h3 className="font-['Oswald'] font-bold text-xl uppercase text-[#C5A945] mb-4">
+                      The Golden Rules
+                    </h3>
+                    <div className="space-y-3 font-['Courier_New'] text-sm text-white">
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#DC143C] font-bold">→</span>
+                        <span><strong>Time</strong> and <strong>Yield</strong> must match targets together</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#DC143C] font-bold">→</span>
+                        <span>If time is good but yield is off → channeling or tamp issue</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#DC143C] font-bold">→</span>
+                        <span>Adjust grind size to change flow rate</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#DC143C] font-bold">→</span>
+                        <span>Finer grind = slower flow, more extraction</span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <span className="text-[#DC143C] font-bold">→</span>
+                        <span>Coarser grind = faster flow, less extraction</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <GrungeButton onClick={() => setStep('setup')} className="w-full">
+                    GOT IT - START BREWING
+                  </GrungeButton>
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
