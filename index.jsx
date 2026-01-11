@@ -123,6 +123,39 @@ const App = () => {
   // History
   const [history, setHistory] = useState([]);
 
+  // Load calibration settings from localStorage on mount
+  useEffect(() => {
+    const savedGrindTime = localStorage.getItem('espresso_grindTime');
+    const savedGrindYield = localStorage.getItem('espresso_grindYield');
+    const savedPreInfusion = localStorage.getItem('espresso_preInfusionSeconds');
+
+    if (savedGrindTime !== null) {
+      setGrindTime(parseFloat(savedGrindTime) || 8.0);
+    }
+    if (savedGrindYield !== null) {
+      setGrindYield(savedGrindYield);
+    }
+    if (savedPreInfusion !== null) {
+      const val = parseFloat(savedPreInfusion);
+      const value = Number.isFinite(val) ? val : DEFAULT_PRE_INFUSION_SECONDS;
+      setPreInfusionSeconds(value);
+      setPreInfusionRemaining(value);
+    }
+  }, []);
+
+  // Save calibration settings to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('espresso_grindTime', grindTime.toString());
+  }, [grindTime]);
+
+  useEffect(() => {
+    localStorage.setItem('espresso_grindYield', grindYield.toString());
+  }, [grindYield]);
+
+  useEffect(() => {
+    localStorage.setItem('espresso_preInfusionSeconds', preInfusionSeconds.toString());
+  }, [preInfusionSeconds]);
+
   // --- Render Logic ---
   const inputWeightTarget = shotType === 'single' ? 9 : 18;
   const targetOutput = inputWeightTarget * TARGET_RATIO;
@@ -207,19 +240,43 @@ const App = () => {
   const analyzeShot = () => {
     const output = parseFloat(actualOutput);
     const time = actualTime;
-    
+
+    // Calculate yield deviation (positive = too much output, negative = too little)
+    const yieldDeviation = output - targetOutput;
+
     let feedback = "";
     let action = "";
     let status = "good";
 
-    if (time < MIN_GOOD_TIME) {
+    // Combined time + yield analysis
+    if (time < MIN_GOOD_TIME && yieldDeviation > 2) {
+      // Fast AND too much output → definitely too coarse
+      status = "fast";
+      feedback = "TOO FAST. GUSHING. UNDER-EXTRACTED.";
+      action = "GRIND FINER (-) TO SLOW FLOW";
+    } else if (time < MIN_GOOD_TIME && yieldDeviation < -2) {
+      // Fast AND too little output → channeling, very fine
+      status = "fast";
+      feedback = "TOO FAST. LOW YIELD. CHANNELING?";
+      action = "GRIND COARSER (+) OR WEDGE PORTAFILTER";
+    } else if (time > MAX_GOOD_TIME && yieldDeviation > 2) {
+      // Slow AND too much output → very fine grind
+      status = "slow";
+      feedback = "TOO SLOW. HIGH YIELD. OVER-EXTRACTED.";
+      action = "GRIND COARSER (+) TO SPEED UP";
+    } else if (time > MAX_GOOD_TIME && yieldDeviation < -2) {
+      // Slow AND too little output → normal underextraction
+      status = "slow";
+      feedback = "TOO SLOW. LOW YIELD. UNDER-EXTRACTED.";
+      action = "GRIND COARSER (+) TO INCREASE FLOW";
+    } else if (time < MIN_GOOD_TIME) {
       status = "fast";
       feedback = "TOO FAST. ACIDIC. UNDER-EXTRACTED.";
-      action = "GRIND FINER (-) OR INCREASE DOSE (+)";
+      action = "GRIND FINER (-) TO SLOW FLOW";
     } else if (time > MAX_GOOD_TIME) {
       status = "slow";
       feedback = "TOO SLOW. BITTER. OVER-EXTRACTED.";
-      action = "GRIND COARSER (+) OR DECREASE DOSE (-)";
+      action = "GRIND COARSER (+) TO SPEED UP";
     } else {
       status = "perfect";
       feedback = "SOLID SHOT. GOLDEN RATIO HIT.";
